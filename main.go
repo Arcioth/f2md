@@ -446,6 +446,30 @@ Examples:
 	fmt.Print(helpText)
 }
 
+func reorderArgs(raw []string) []string {
+	var flags []string
+	var positional []string
+
+	valueFlags := map[string]bool{
+		"-o": true, "--output": true, "-output": true,
+		"-m": true, "-ms": true, "--max-size": true, "-max-size": true,
+	}
+
+	for i := 0; i < len(raw); i++ {
+		arg := raw[i]
+		if strings.HasPrefix(arg, "-") {
+			flags = append(flags, arg)
+			if valueFlags[arg] && i+1 < len(raw) && !strings.HasPrefix(raw[i+1], "-") {
+				flags = append(flags, raw[i+1])
+				i++
+			}
+		} else {
+			positional = append(positional, arg)
+		}
+	}
+	return append(flags, positional...)
+}
+
 func main() {
 	var (
 		useDate       bool
@@ -492,7 +516,7 @@ func main() {
 	flag.BoolVar(&showHelp, "h", false, "Show this help message")
 
 	flag.Usage = printHelp
-	flag.Parse()
+	flag.CommandLine.Parse(reorderArgs(os.Args[1:]))
 
 	if showHelp {
 		printHelp()

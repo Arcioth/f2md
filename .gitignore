@@ -1,0 +1,13 @@
+# Binaries
+f2md
+folder2md
+
+# Generated output
+project_context.md
+*.tmp
+
+# System & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

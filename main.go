@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -253,6 +254,10 @@ func shouldIgnore(name string, isDir bool, skipLocks bool) bool {
 		return true
 	}
 	lower := strings.ToLower(name)
+	// Skip self binary artifacts
+	if lower == "f2md" || lower == "folder2md" {
+		return true
+	}
 	// Safeguard: skip sensitive secret files
 	if lower == ".env" || strings.HasPrefix(lower, ".env.") {
 		return true
@@ -385,50 +390,117 @@ func buildTree(root string, prefix string, absOutput string, skipLocks bool, sb 
 	return nil
 }
 
+func generateOutputFilename(rootDirName string, useFolderName bool, useDate bool, useTime bool) string {
+	now := time.Now()
+	var parts []string
+
+	if useFolderName && rootDirName != "" && rootDirName != "." && rootDirName != "/" {
+		parts = append(parts, rootDirName)
+	} else {
+		parts = append(parts, "project")
+	}
+
+	if useDate {
+		parts = append(parts, now.Format("2006-01-02"))
+	}
+
+	if useTime {
+		parts = append(parts, now.Format("15-04-05"))
+	}
+
+	parts = append(parts, "context.md")
+	return strings.Join(parts, "_")
+}
+
 func printHelp() {
 	helpText := `f2md - Fast, zero-dependency codebase to Markdown context packer
 
 Usage:
   f2md [options] [directory]
 
-Options:
-  -o string
-        Output file path (default "project_context.md", use '-' for stdout)
-  -stdout
-        Write directly to stdout instead of a file
-  -max-size int
-        Maximum file size in KB to include (default 500, 0 for unlimited)
-  -skip-locks
-        Skip dependency lockfiles like package-lock.json, Cargo.lock, etc. (default true)
-  -h, --help
-        Show this help message
+Output Naming Options:
+  -fn,  --folder-name     Include folder name in output filename (e.g. <folder>_context.md)
+  -d,   --date            Include current date in output filename (YYYY-MM-DD)
+  -nd,  --nodate          Do not include date in output filename
+  -t,   --time            Include current time in output filename (HH-MM-SS)
+  -o,   --output string   Explicit output file path (use '-' for stdout)
+
+Processing Options:
+  -s,   --stdout          Stream Markdown directly to stdout instead of a file
+  -m,   --max-size int    Maximum file size in KB to include (default 500, 0 for unlimited)
+  -sl,  --skip-locks      Skip dependency lockfiles (default true)
+  -nsl, --noskip-locks    Do not skip dependency lockfiles
+  -h,   --help            Show this help message
 
 Examples:
-  f2md                          # Pack current directory into project_context.md
-  f2md path/to/project          # Pack specified project directory
-  f2md -o context.md .          # Save to custom output file
-  f2md -stdout . | wl-copy      # Pipe directly to Wayland clipboard
-  f2md -stdout . | xclip        # Pipe directly to X11 clipboard
-  f2md -max-size 1000 .         # Allow files up to 1 MB
+  f2md                             # Pack current directory -> project_context.md
+  f2md -fn                         # Pack with folder name  -> <folder>_context.md
+  f2md -fn -d                      # Pack with date         -> <folder>_YYYY-MM-DD_context.md
+  f2md -fn -d -t                   # Pack with date & time  -> <folder>_YYYY-MM-DD_HH-MM-SS_context.md
+  f2md -d path/to/project          # Pack specified directory with date
+  f2md -o custom.md                # Write to custom output file
+  f2md -s | wl-copy                # Stream to Wayland clipboard
+  f2md -s | xclip -sel clip        # Stream to X11 clipboard
+  f2md -m 1000                     # Allow files up to 1 MB
 `
 	fmt.Print(helpText)
 }
 
 func main() {
-	helpFlag := flag.Bool("help", false, "Show help message")
-	hFlag := flag.Bool("h", false, "Show help message")
-	outputFlag := flag.String("o", "project_context.md", "Output file path (use '-' for stdout)")
-	stdoutFlag := flag.Bool("stdout", false, "Write directly to stdout instead of a file")
-	maxSizeKB := flag.Int64("max-size", 500, "Maximum file size in KB to include (0 for unlimited)")
-	skipLocksFlag := flag.Bool("skip-locks", true, "Skip package-lock, yarn.lock, Cargo.lock and other generated lockfiles")
+	var (
+		useDate       bool
+		noDate        bool
+		useTime       bool
+		useFolderName bool
+		outputFile    string
+		toStdout      bool
+		maxSizeKB     int64 = 500
+		skipLocks     bool  = true
+		noSkipLocks   bool
+		showHelp      bool
+	)
+
+	flag.BoolVar(&useDate, "date", false, "Include current date (YYYY-MM-DD) in output filename")
+	flag.BoolVar(&useDate, "d", false, "Include current date (YYYY-MM-DD) in output filename")
+
+	flag.BoolVar(&noDate, "nodate", false, "Do not include date in output filename")
+	flag.BoolVar(&noDate, "nd", false, "Do not include date in output filename")
+
+	flag.BoolVar(&useTime, "time", false, "Include current time (HH-MM-SS) in output filename")
+	flag.BoolVar(&useTime, "t", false, "Include current time (HH-MM-SS) in output filename")
+
+	flag.BoolVar(&useFolderName, "folder-name", false, "Include folder name in output filename")
+	flag.BoolVar(&useFolderName, "fn", false, "Include folder name in output filename")
+
+	flag.StringVar(&outputFile, "output", "", "Output file path (use '-' for stdout)")
+	flag.StringVar(&outputFile, "o", "", "Output file path (use '-' for stdout)")
+
+	flag.BoolVar(&toStdout, "stdout", false, "Write directly to stdout instead of a file")
+	flag.BoolVar(&toStdout, "s", false, "Write directly to stdout instead of a file")
+
+	flag.Int64Var(&maxSizeKB, "max-size", 500, "Maximum file size in KB to include (0 for unlimited)")
+	flag.Int64Var(&maxSizeKB, "m", 500, "Maximum file size in KB to include (0 for unlimited)")
+	flag.Int64Var(&maxSizeKB, "ms", 500, "Maximum file size in KB to include (0 for unlimited)")
+
+	flag.BoolVar(&skipLocks, "skip-locks", true, "Skip dependency lockfiles like package-lock.json, Cargo.lock, etc.")
+	flag.BoolVar(&skipLocks, "sl", true, "Skip dependency lockfiles like package-lock.json, Cargo.lock, etc.")
+
+	flag.BoolVar(&noSkipLocks, "noskip-locks", false, "Do not skip lockfiles")
+	flag.BoolVar(&noSkipLocks, "nsl", false, "Do not skip lockfiles")
+
+	flag.BoolVar(&showHelp, "help", false, "Show this help message")
+	flag.BoolVar(&showHelp, "h", false, "Show this help message")
 
 	flag.Usage = printHelp
 	flag.Parse()
 
-	if *helpFlag || *hFlag {
+	if showHelp {
 		printHelp()
 		os.Exit(0)
 	}
+
+	finalDate := useDate && !noDate
+	finalSkipLocks := skipLocks && !noSkipLocks
 
 	targetDir := "."
 	args := flag.Args()
@@ -452,15 +524,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	toStdout := *stdoutFlag || *outputFlag == "-"
+	rootDirName := filepath.Base(absRoot)
+
+	isStdout := toStdout || outputFile == "-"
 
 	var absOutput string
 	var out io.Writer
+	var chosenOutput string
 
-	if toStdout {
+	if isStdout {
 		out = os.Stdout
 	} else {
-		resolvedOutput, err := filepath.Abs(*outputFlag)
+		if outputFile == "" {
+			chosenOutput = generateOutputFilename(rootDirName, useFolderName, finalDate, useTime)
+		} else {
+			chosenOutput = outputFile
+			if fi, err := os.Stat(chosenOutput); err == nil && fi.IsDir() {
+				genName := generateOutputFilename(rootDirName, useFolderName, finalDate, useTime)
+				chosenOutput = filepath.Join(chosenOutput, genName)
+			}
+		}
+
+		resolvedOutput, err := filepath.Abs(chosenOutput)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error resolving output path: %v\n", err)
 			os.Exit(1)
@@ -484,18 +569,16 @@ func main() {
 	writer := bufio.NewWriter(out)
 	defer writer.Flush()
 
-	rootDirName := filepath.Base(absRoot)
-
 	// 1. Write Directory Tree
 	fmt.Fprintf(writer, "# Project Directory Structure\n\n```text\n%s/\n", rootDirName)
 	var treeBuilder strings.Builder
-	if err := buildTree(absRoot, "", absOutput, *skipLocksFlag, &treeBuilder); err != nil {
+	if err := buildTree(absRoot, "", absOutput, finalSkipLocks, &treeBuilder); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: failed to build full tree: %v\n", err)
 	}
 	writer.WriteString(treeBuilder.String())
 	writer.WriteString("```\n\n---\n\n# File Contents\n\n")
 
-	maxSizeBytes := *maxSizeKB * 1024
+	maxSizeBytes := maxSizeKB * 1024
 
 	// 2. Walk and Append File Contents
 	err = filepath.WalkDir(absRoot, func(path string, d os.DirEntry, err error) error {
@@ -511,13 +594,13 @@ func main() {
 		name := d.Name()
 
 		if d.IsDir() {
-			if path != absRoot && shouldIgnore(name, true, *skipLocksFlag) {
+			if path != absRoot && shouldIgnore(name, true, finalSkipLocks) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		if shouldIgnore(name, false, *skipLocksFlag) {
+		if shouldIgnore(name, false, finalSkipLocks) {
 			return nil
 		}
 
@@ -543,7 +626,7 @@ func main() {
 		// Skip oversized files to protect memory & LLM context
 		if maxSizeBytes > 0 && info.Size() > maxSizeBytes {
 			fmt.Fprintf(writer, "## File: `%s`\n\n", relPath)
-			fmt.Fprintf(writer, "<!-- Skipped: file size (%d KB) exceeds limit (%d KB) -->\n\n---\n\n", info.Size()/1024, *maxSizeKB)
+			fmt.Fprintf(writer, "<!-- Skipped: file size (%d KB) exceeds limit (%d KB) -->\n\n---\n\n", info.Size()/1024, maxSizeKB)
 			return nil
 		}
 
@@ -572,7 +655,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !toStdout {
-		fmt.Printf("Successfully generated %s\n", *outputFlag)
+	if !isStdout {
+		fmt.Printf("Successfully generated %s\n", chosenOutput)
 	}
 }

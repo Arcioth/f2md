@@ -54,13 +54,18 @@ f2md [options] [directory]
 
 ### Options
 
-| Flag | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `-o` | `string` | `"project_context.md"` | Output file path (use `"-"` for stdout) |
-| `-stdout` | `bool` | `false` | Stream Markdown directly to standard output |
-| `-max-size` | `int` | `500` | Maximum file size in KB to include (0 for unlimited) |
-| `-skip-locks` | `bool` | `true` | Skip package-lock, Cargo.lock, yarn.lock, etc. |
-| `-h`, `--help` | `bool` | `false` | Show help and exit |
+| Flag | Short | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `--folder-name` | `-fn` | `bool` | `false` | Include target directory name in output filename |
+| `--date` | `-d` | `bool` | `false` | Include current date (`YYYY-MM-DD`) in output filename |
+| `--nodate` | `-nd` | `bool` | `false` | Force exclude date from output filename |
+| `--time` | `-t` | `bool` | `false` | Include current time (`HH-MM-SS`) in output filename |
+| `--output` | `-o` | `string` | `""` | Explicit output file path (use `"-"` for stdout) |
+| `--stdout` | `-s` | `bool` | `false` | Stream Markdown directly to standard output |
+| `--max-size` | `-m` | `int` | `500` | Maximum file size in KB to include (0 for unlimited) |
+| `--skip-locks` | `-sl` | `bool` | `true` | Skip package-lock, Cargo.lock, yarn.lock, etc. |
+| `--noskip-locks`| `-nsl`| `bool` | `false` | Retain package lockfiles in export |
+| `--help` | `-h` | `bool` | `false` | Show help message and exit |
 
 ---
 
@@ -72,34 +77,46 @@ Pack the current directory into `project_context.md`:
 f2md
 ```
 
-### 2. Export Another Directory
+### 2. Include Folder Name & Date in Filename
+Pack with folder name and date (e.g. `daetron_2026-09-08_context.md`):
+```bash
+f2md -fn -d
+```
+
+### 3. Include Folder Name, Date & Time
+Pack with folder name, date, and timestamp (e.g. `daetron_2026-09-08_22-30-15_context.md`):
+```bash
+f2md -fn -d -t
+```
+
+### 4. Export Another Directory
 Pack a specific project into a custom file:
 ```bash
 f2md -o ~/Desktop/daetron_context.md ~/Documents/daetron
 ```
 
-### 3. Direct to Clipboard
+### 5. Direct to Clipboard
 Pipe project context straight to your system clipboard:
 
 **Wayland:**
 ```bash
-f2md -stdout | wl-copy
+f2md -s | wl-copy
 ```
 
 **X11:**
 ```bash
-f2md -stdout | xclip -selection clipboard
+f2md -s | xclip -selection clipboard
 ```
 
 **macOS:**
 ```bash
-f2md -stdout | pbcopy
+f2md -s | pbcopy
 ```
 
-### 4. Custom Limits
+### 6. Custom Limits
 Include files up to 2MB and retain package lockfiles:
 ```bash
-f2md -max-size 2048 -skip-locks=false
+f2md -m 2048 -nsl
 ```
 
 ---

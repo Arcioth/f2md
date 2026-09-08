@@ -12,7 +12,7 @@
       packages = forAllSystems (system: {
         f2md = (pkgsFor system).buildGoModule {
           pname = "f2md";
-          version = "0.1.0";
+          version = "0.2.0";
           src = ./.;
           vendorHash = null;
           postInstall = ''

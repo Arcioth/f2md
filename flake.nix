@@ -1,5 +1,5 @@
 {
-  description = "f2md — Fast codebase to Markdown context packer";
+  description = "f2md — Fast codebase to Markdown or plain-text context packer";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -12,7 +12,7 @@
       packages = forAllSystems (system: {
         f2md = (pkgsFor system).buildGoModule {
           pname = "f2md";
-          version = "0.2.0";
+          version = "0.3.0";
           src = ./.;
           vendorHash = null;
           postInstall = ''

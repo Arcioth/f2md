@@ -7,12 +7,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
 )
-
 
 var defaultIgnoreDirs = map[string]bool{
 	".git":         true,
@@ -41,23 +39,23 @@ var defaultIgnoreDirs = map[string]bool{
 }
 
 var commonTextFilenames = map[string]string{
-	"dockerfile":    "dockerfile",
-	"containerfile": "dockerfile",
-	"makefile":      "makefile",
-	"justfile":      "makefile",
-	"gemfile":       "ruby",
-	"procfile":      "yaml",
-	"vagrantfile":   "ruby",
-	"rakefile":      "ruby",
-	"cmakelists.txt":"cmake",
-	"license":       "text",
-	"licence":       "text",
-	"copying":       "text",
-	"readme":        "markdown",
-	"caddyfile":     "caddyfile",
-	"earthfile":     "earthfile",
-	"authors":       "text",
-	"contributors":  "text",
+	"dockerfile":     "dockerfile",
+	"containerfile":  "dockerfile",
+	"makefile":       "makefile",
+	"justfile":       "makefile",
+	"gemfile":        "ruby",
+	"procfile":       "yaml",
+	"vagrantfile":    "ruby",
+	"rakefile":       "ruby",
+	"cmakelists.txt": "cmake",
+	"license":        "text",
+	"licence":        "text",
+	"copying":        "text",
+	"readme":         "markdown",
+	"caddyfile":      "caddyfile",
+	"earthfile":      "earthfile",
+	"authors":        "text",
+	"contributors":   "text",
 }
 
 var lockFiles = map[string]bool{
@@ -96,110 +94,110 @@ var binaryExtensions = map[string]bool{
 
 var textExtensions = map[string]string{
 	// User custom / Daetron / Arclinkdae rule formats
-	".acv":          "ini",
-	".ctr":          "ini",
-	".rule":         "ini",
+	".acv":  "ini",
+	".ctr":  "ini",
+	".rule": "ini",
 
 	// Systems & Low-level
-	".c":            "c",
-	".h":            "c",
-	".cpp":          "cpp",
-	".cc":           "cpp",
-	".cxx":          "cpp",
-	".hpp":          "cpp",
-	".hxx":          "cpp",
-	".hh":           "cpp",
-	".inl":          "cpp",
-	".rs":           "rust",
-	".go":           "go",
-	".zig":          "zig",
-	".d":            "d",
-	".nim":          "nim",
-	".v":            "verilog",
-	".sv":           "verilog",
-	".svh":          "verilog",
-	".vhd":          "vhdl",
-	".vhdl":         "vhdl",
-	".s":            "assembly",
-	".asm":          "assembly",
-	".nasm":         "assembly",
+	".c":    "c",
+	".h":    "c",
+	".cpp":  "cpp",
+	".cc":   "cpp",
+	".cxx":  "cpp",
+	".hpp":  "cpp",
+	".hxx":  "cpp",
+	".hh":   "cpp",
+	".inl":  "cpp",
+	".rs":   "rust",
+	".go":   "go",
+	".zig":  "zig",
+	".d":    "d",
+	".nim":  "nim",
+	".v":    "verilog",
+	".sv":   "verilog",
+	".svh":  "verilog",
+	".vhd":  "vhdl",
+	".vhdl": "vhdl",
+	".s":    "assembly",
+	".asm":  "assembly",
+	".nasm": "assembly",
 
 	// Web & Scripting
-	".js":           "javascript",
-	".mjs":          "javascript",
-	".cjs":          "javascript",
-	".jsx":          "jsx",
-	".ts":           "typescript",
-	".mts":          "typescript",
-	".cts":          "typescript",
-	".tsx":          "tsx",
-	".vue":          "vue",
-	".svelte":       "svelte",
-	".astro":        "astro",
-	".html":         "html",
-	".htm":          "html",
-	".xhtml":        "html",
-	".css":          "css",
-	".scss":         "scss",
-	".sass":         "sass",
-	".less":         "less",
-	".py":           "python",
-	".pyi":          "python",
-	".pyw":          "python",
-	".rb":           "ruby",
-	".rake":         "ruby",
-	".gemspec":      "ruby",
-	".php":          "php",
-	".phtml":        "php",
-	".lua":          "lua",
-	".pl":           "perl",
-	".pm":           "perl",
-	".tcl":          "tcl",
-	".awk":          "awk",
-	".sed":          "sed",
-	".sh":           "bash",
-	".bash":         "bash",
-	".zsh":          "zsh",
-	".fish":         "fish",
-	".ps1":          "powershell",
-	".psm1":         "powershell",
-	".bat":          "batch",
-	".cmd":          "batch",
-	".r":            "r",
-	".jl":           "julia",
-	".dart":         "dart",
+	".js":      "javascript",
+	".mjs":     "javascript",
+	".cjs":     "javascript",
+	".jsx":     "jsx",
+	".ts":      "typescript",
+	".mts":     "typescript",
+	".cts":     "typescript",
+	".tsx":     "tsx",
+	".vue":     "vue",
+	".svelte":  "svelte",
+	".astro":   "astro",
+	".html":    "html",
+	".htm":     "html",
+	".xhtml":   "html",
+	".css":     "css",
+	".scss":    "scss",
+	".sass":    "sass",
+	".less":    "less",
+	".py":      "python",
+	".pyi":     "python",
+	".pyw":     "python",
+	".rb":      "ruby",
+	".rake":    "ruby",
+	".gemspec": "ruby",
+	".php":     "php",
+	".phtml":   "php",
+	".lua":     "lua",
+	".pl":      "perl",
+	".pm":      "perl",
+	".tcl":     "tcl",
+	".awk":     "awk",
+	".sed":     "sed",
+	".sh":      "bash",
+	".bash":    "bash",
+	".zsh":     "zsh",
+	".fish":    "fish",
+	".ps1":     "powershell",
+	".psm1":    "powershell",
+	".bat":     "batch",
+	".cmd":     "batch",
+	".r":       "r",
+	".jl":      "julia",
+	".dart":    "dart",
 
 	// Functional & BEAM
-	".ex":           "elixir",
-	".exs":          "elixir",
-	".erl":          "erlang",
-	".hrl":          "erlang",
-	".clj":          "clojure",
-	".cljs":         "clojure",
-	".cljc":         "clojure",
-	".edn":          "clojure",
-	".hs":           "haskell",
-	".lhs":          "haskell",
-	".ml":           "ocaml",
-	".mli":          "ocaml",
-	".lisp":         "lisp",
-	".lsp":          "lisp",
-	".scm":          "lisp",
-	".rkt":          "racket",
+	".ex":   "elixir",
+	".exs":  "elixir",
+	".erl":  "erlang",
+	".hrl":  "erlang",
+	".clj":  "clojure",
+	".cljs": "clojure",
+	".cljc": "clojure",
+	".edn":  "clojure",
+	".hs":   "haskell",
+	".lhs":  "haskell",
+	".ml":   "ocaml",
+	".mli":  "ocaml",
+	".lisp": "lisp",
+	".lsp":  "lisp",
+	".scm":  "lisp",
+	".rkt":  "racket",
 
 	// JVM & .NET
-	".java":         "java",
-	".kt":           "kotlin",
-	".kts":          "kotlin",
-	".scala":        "scala",
-	".sc":           "scala",
-	".groovy":       "groovy",
-	".gradle":       "groovy",
-	".cs":           "csharp",
-	".fs":           "fsharp",
-	".fsx":          "fsharp",
-	".vb":           "vb",
-	".swift":        "swift",
+	".java":   "java",
+	".kt":     "kotlin",
+	".kts":    "kotlin",
+	".scala":  "scala",
+	".sc":     "scala",
+	".groovy": "groovy",
+	".gradle": "groovy",
+	".cs":     "csharp",
+	".fs":     "fsharp",
+	".fsx":    "fsharp",
+	".vb":     "vb",
+	".swift":  "swift",
 
 	// Config, Data & Schemas
 	".json":         "json",
@@ -231,17 +229,17 @@ var textExtensions = map[string]string{
 	".patch":        "diff",
 
 	// Documentation & Markup
-	".md":           "markdown",
-	".markdown":     "markdown",
-	".mdown":        "markdown",
-	".mdx":          "markdown",
-	".txt":          "text",
-	".rst":          "rst",
-	".adoc":         "asciidoc",
-	".asciidoc":     "asciidoc",
-	".tex":          "latex",
-	".latex":        "latex",
-	".org":          "org",
+	".md":       "markdown",
+	".markdown": "markdown",
+	".mdown":    "markdown",
+	".mdx":      "markdown",
+	".txt":      "text",
+	".rst":      "rst",
+	".adoc":     "asciidoc",
+	".asciidoc": "asciidoc",
+	".tex":      "latex",
+	".latex":    "latex",
+	".org":      "org",
 }
 
 // shouldIgnore filters out hidden files, ignored directories, lockfiles, and minified noise.
@@ -318,7 +316,7 @@ func detectTextFile(path string, base string, ext string) (bool, string) {
 	return true, "text"
 }
 
-// getCodeFence calculates the closing/opening fence (e.g. ```, ````, `````)
+// getCodeFence calculates the closing/opening fence (e.g. ```, ````, ```“)
 // ensuring it has more backticks than the longest run inside the file to prevent markdown corruption.
 func getCodeFence(content []byte) string {
 	maxRun := 0
@@ -342,7 +340,7 @@ func getCodeFence(content []byte) string {
 }
 
 // buildTree creates an ASCII tree visualization of the project.
-func buildTree(root string, prefix string, absOutput string, skipLocks bool, sb *strings.Builder) error {
+func buildTree(root string, prefix string, opt packOptions, sb *strings.Builder) error {
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		return err
@@ -351,24 +349,19 @@ func buildTree(root string, prefix string, absOutput string, skipLocks bool, sb 
 	var validEntries []os.DirEntry
 	for _, entry := range entries {
 		name := entry.Name()
-		if shouldIgnore(name, entry.IsDir(), skipLocks) {
+		if shouldIgnore(name, entry.IsDir(), opt.skipLocks) {
 			continue
 		}
 
 		entryAbsPath := filepath.Join(root, name)
-		if absOutput != "" && entryAbsPath == absOutput {
+		if opt.absOutput != "" && entryAbsPath == opt.absOutput {
 			continue
 		}
 
 		validEntries = append(validEntries, entry)
 	}
 
-	sort.Slice(validEntries, func(i, j int) bool {
-		if validEntries[i].IsDir() != validEntries[j].IsDir() {
-			return validEntries[i].IsDir()
-		}
-		return validEntries[i].Name() < validEntries[j].Name()
-	})
+	sortDirEntries(root, validEntries, opt.sort, opt.pinReadme)
 
 	for i, entry := range validEntries {
 		connector := "├── "
@@ -382,7 +375,7 @@ func buildTree(root string, prefix string, absOutput string, skipLocks bool, sb 
 
 		if entry.IsDir() {
 			subPath := filepath.Join(root, entry.Name())
-			if err := buildTree(subPath, prefix+extension, absOutput, skipLocks, sb); err != nil {
+			if err := buildTree(subPath, prefix+extension, opt, sb); err != nil {
 				return err
 			}
 		}
@@ -390,7 +383,7 @@ func buildTree(root string, prefix string, absOutput string, skipLocks bool, sb 
 	return nil
 }
 
-func generateOutputFilename(rootDirName string, useFolderName bool, useDate bool, useTime bool) string {
+func generateOutputFilename(rootDirName string, useFolderName bool, useDate bool, useTime bool, ext string) string {
 	now := time.Now()
 	var parts []string
 
@@ -408,39 +401,50 @@ func generateOutputFilename(rootDirName string, useFolderName bool, useDate bool
 		parts = append(parts, now.Format("15-04-05"))
 	}
 
-	parts = append(parts, "context.md")
+	if ext == "" {
+		ext = "md"
+	}
+	parts = append(parts, "context."+ext)
 	return strings.Join(parts, "_")
 }
 
 func printHelp() {
-	helpText := `f2md - Fast, zero-dependency codebase to Markdown context packer
+	helpText := `f2md - Fast, zero-dependency codebase to Markdown/text context packer
 
 Usage:
   f2md [options] [directory]
 
 Output Naming Options:
-  -fn,  --folder-name     Include folder name in output filename (e.g. <folder>_context.md)
+  -fn,  --folder-name     Include folder name in output filename; pin README first
   -d,   --date            Include current date in output filename (YYYY-MM-DD)
   -nd,  --nodate          Do not include date in output filename
   -t,   --time            Include current time in output filename (HH-MM-SS)
   -o,   --output string   Explicit output file path (use '-' for stdout)
+  -F,   --format string   Output format: md (default) or txt
+                          Also inferred from -o extension (.md / .txt)
+
+Sort:
+  -S,   --sort spec       Sort files by one key. Default direction is descending
+                          (largest / newest first). Append :asc for the reverse.
+                          Keys: size, created, modified
+                          Examples: size, size:asc, created, modified:asc
 
 Processing Options:
-  -s,   --stdout          Stream Markdown directly to stdout instead of a file
-  -m,   --max-size int    Maximum file size in KB to include (default 500, 0 for unlimited)
+  -s,   --stdout          Stream output directly to stdout instead of a file
+  -m,   --max-size int    Maximum file size in KB to include (default 500, 0 unlimited)
   -sl,  --skip-locks      Skip dependency lockfiles (default true)
   -nsl, --noskip-locks    Do not skip dependency lockfiles
   -h,   --help            Show this help message
 
 Examples:
   f2md                             # Pack current directory -> project_context.md
-  f2md -fn                         # Pack with folder name  -> <folder>_context.md
-  f2md -fn -d                      # Pack with date         -> <folder>_YYYY-MM-DD_context.md
-  f2md -fn -d -t                   # Pack with date & time  -> <folder>_YYYY-MM-DD_HH-MM-SS_context.md
-  f2md -d path/to/project          # Pack specified directory with date
-  f2md -o custom.md                # Write to custom output file
+  f2md -fn -d                      # <folder>_YYYY-MM-DD_context.md, README first
+  f2md -fn -d -t                   # also include time
+  f2md -S modified                 # newest modified files first
+  f2md -fn -S created:asc          # README first, then oldest created
+  f2md -S size -F txt              # largest first, plain text
+  f2md -o dump.txt                 # format inferred as txt
   f2md -s | wl-copy                # Stream to Wayland clipboard
-  f2md -s | xclip -sel clip        # Stream to X11 clipboard
   f2md -m 1000                     # Allow files up to 1 MB
 `
 	fmt.Print(helpText)
@@ -453,6 +457,8 @@ func reorderArgs(raw []string) []string {
 	valueFlags := map[string]bool{
 		"-o": true, "--output": true, "-output": true,
 		"-m": true, "-ms": true, "--max-size": true, "-max-size": true,
+		"-S": true, "--sort": true, "-sort": true,
+		"-F": true, "--format": true, "-format": true,
 	}
 
 	for i := 0; i < len(raw); i++ {
@@ -476,6 +482,8 @@ func main() {
 		noDate        bool
 		useTime       bool
 		useFolderName bool
+		sortRaw       string
+		formatRaw     string
 		outputFile    string
 		toStdout      bool
 		maxSizeKB     int64 = 500
@@ -493,8 +501,14 @@ func main() {
 	flag.BoolVar(&useTime, "time", false, "Include current time (HH-MM-SS) in output filename")
 	flag.BoolVar(&useTime, "t", false, "Include current time (HH-MM-SS) in output filename")
 
-	flag.BoolVar(&useFolderName, "folder-name", false, "Include folder name in output filename")
-	flag.BoolVar(&useFolderName, "fn", false, "Include folder name in output filename")
+	flag.BoolVar(&useFolderName, "folder-name", false, "Include folder name in output filename; pin README files to the top")
+	flag.BoolVar(&useFolderName, "fn", false, "Include folder name in output filename; pin README files to the top")
+
+	flag.StringVar(&sortRaw, "sort", "", "Sort spec: size|created|modified[:asc|:desc]")
+	flag.StringVar(&sortRaw, "S", "", "Sort spec: size|created|modified[:asc|:desc]")
+
+	flag.StringVar(&formatRaw, "format", "", "Output format: md or txt")
+	flag.StringVar(&formatRaw, "F", "", "Output format: md or txt")
 
 	flag.StringVar(&outputFile, "output", "", "Output file path (use '-' for stdout)")
 	flag.StringVar(&outputFile, "o", "", "Output file path (use '-' for stdout)")
@@ -525,6 +539,23 @@ func main() {
 
 	finalDate := useDate && !noDate
 	finalSkipLocks := skipLocks && !noSkipLocks
+
+	sortSpecVal, sortErr := parseSortSpec(sortRaw)
+	if sortErr != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", sortErr)
+		os.Exit(1)
+	}
+
+	format, formatErr := parseFormat(formatRaw)
+	if formatErr != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", formatErr)
+		os.Exit(1)
+	}
+	if formatRaw == "" && outputFile != "" && outputFile != "-" {
+		if inferred, ok := inferFormatFromPath(outputFile); ok {
+			format = inferred
+		}
+	}
 
 	targetDir := "."
 	args := flag.Args()
@@ -560,11 +591,11 @@ func main() {
 		out = os.Stdout
 	} else {
 		if outputFile == "" {
-			chosenOutput = generateOutputFilename(rootDirName, useFolderName, finalDate, useTime)
+			chosenOutput = generateOutputFilename(rootDirName, useFolderName, finalDate, useTime, format.ext())
 		} else {
 			chosenOutput = outputFile
 			if fi, err := os.Stat(chosenOutput); err == nil && fi.IsDir() {
-				genName := generateOutputFilename(rootDirName, useFolderName, finalDate, useTime)
+				genName := generateOutputFilename(rootDirName, useFolderName, finalDate, useTime, format.ext())
 				chosenOutput = filepath.Join(chosenOutput, genName)
 			}
 		}
@@ -593,87 +624,14 @@ func main() {
 	writer := bufio.NewWriter(out)
 	defer writer.Flush()
 
-	// 1. Write Directory Tree
-	fmt.Fprintf(writer, "# Project Directory Structure\n\n```text\n%s/\n", rootDirName)
-	var treeBuilder strings.Builder
-	if err := buildTree(absRoot, "", absOutput, finalSkipLocks, &treeBuilder); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: failed to build full tree: %v\n", err)
-	}
-	writer.WriteString(treeBuilder.String())
-	writer.WriteString("```\n\n---\n\n# File Contents\n\n")
-
-	maxSizeBytes := maxSizeKB * 1024
-
-	// 2. Walk and Append File Contents
-	err = filepath.WalkDir(absRoot, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Prevent self-inclusion
-		if absOutput != "" && path == absOutput {
-			return nil
-		}
-
-		name := d.Name()
-
-		if d.IsDir() {
-			if path != absRoot && shouldIgnore(name, true, finalSkipLocks) {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		if shouldIgnore(name, false, finalSkipLocks) {
-			return nil
-		}
-
-		ext := strings.ToLower(filepath.Ext(path))
-		base := strings.ToLower(name)
-
-		// Fast text check without reading entire file
-		isText, lang := detectTextFile(path, base, ext)
-		if !isText {
-			return nil
-		}
-
-		relPath, err := filepath.Rel(absRoot, path)
-		if err != nil {
-			relPath = path
-		}
-
-		info, err := d.Info()
-		if err != nil {
-			return nil
-		}
-
-		// Skip oversized files to protect memory & LLM context
-		if maxSizeBytes > 0 && info.Size() > maxSizeBytes {
-			fmt.Fprintf(writer, "## File: `%s`\n\n", relPath)
-			fmt.Fprintf(writer, "<!-- Skipped: file size (%d KB) exceeds limit (%d KB) -->\n\n---\n\n", info.Size()/1024, maxSizeKB)
-			return nil
-		}
-
-		content, err := os.ReadFile(path)
-		if err != nil {
-			fmt.Fprintf(writer, "## File: `%s`\n\n", relPath)
-			fmt.Fprintf(writer, "Error reading file: %v\n\n---\n\n", err)
-			return nil
-		}
-
-		fence := getCodeFence(content)
-
-		fmt.Fprintf(writer, "## File: `%s`\n\n", relPath)
-		fmt.Fprintf(writer, "%s%s\n", fence, lang)
-		writer.Write(content)
-		if len(content) > 0 && content[len(content)-1] != '\n' {
-			writer.WriteByte('\n')
-		}
-		fmt.Fprintf(writer, "%s\n\n---\n\n", fence)
-
-		return nil
-	})
-
+	err = packDirectory(absRoot, packOptions{
+		skipLocks: finalSkipLocks,
+		maxSizeKB: maxSizeKB,
+		absOutput: absOutput,
+		sort:      sortSpecVal,
+		pinReadme: useFolderName,
+		format:    format,
+	}, writer)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error walking directory: %v\n", err)
 		os.Exit(1)

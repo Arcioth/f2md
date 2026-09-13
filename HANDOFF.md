@@ -1,68 +1,47 @@
 # f2md Handoff
 
-**Date**: 2026-09-09  
+**Date**: 2026-09-13  
 **Repository**: https://github.com/Arcioth/f2md (Public, Apache-2.0)  
-**Binary Location**: `~/.local/bin/f2md` (Symlinked: `~/.local/bin/folder2md`)
+**Binary Location**: `~/.local/bin/f2md` (Symlinked: `~/.local/bin/folder2md`)  
+**Version**: 0.3.0
 
 ---
 
 ## 1. Project Overview
 
-`f2md` is a zero-dependency, ultra-fast CLI utility in pure Go (standard library only) designed to inspect, tree-index, and pack any codebase or directory into a structured Markdown document optimized for LLM context injection.
+`f2md` is a zero-dependency CLI in pure Go (standard library only) that packs a directory into one Markdown or plain-text document for LLM context.
+
+README is the public landing page. This file is session state.
 
 ---
 
-## 2. Key Architecture & Improvements
+## 2. Current CLI (v0.3.0)
 
-### Anti-Ouroboros Protection
-- Resolves the absolute path of the output file upfront (`absOutput`).
-- Automatically ignores the destination file in both tree generation (`buildTree`) and directory walking (`filepath.WalkDir`).
-- Multiple consecutive runs will never re-ingest or recursively duplicate the context output.
+- `-S` / `--sort KEY[:asc|:desc]` — keys `size`, `created`, `modified`. Default desc.
+- `-F` / `--format md|txt` — also inferred from `-o` extension.
+- `-fn` pins README variants to the top and names the output after the folder.
+- Created time: Linux `statx` btime, else ctime. Darwin birthtime. Windows CreationTime.
 
-### Markdown Fence Integrity
-- Dynamic fence generator (`getCodeFence`) scans byte content for runs of backticks.
-- If a target file contains ```` ``` ```` (e.g. `README.md`), the enclosing fence scales to `4+` backticks (```` ```` ````). Markdown renderers and LLMs will never experience premature fence closure.
-
-### Hybrid Filetype Detection & Broad Coverage
-- **Fast-Reject Set**: Common binary formats (`.png`, `.jpg`, `.pdf`, `.zip`, `.so`, `.exe`, `.tar`, `.wasm`, etc.) are rejected immediately by extension with zero disk I/O.
-- **Native Extension Map**: 100+ languages and formats mapped directly to their markdown syntax tags.
-- **Custom Rule Formats**: Explicitly supports `.acv`, `.ctr`, and `.rule` (Daetron / Arclinkdae configs) mapped to `ini` syntax highlighting.
-- **Content Sniffing Fallback**: Unrecognized or extensionless files (`Dockerfile`, `Makefile`, `Justfile`, `LICENSE`) are sniffed via the first 512 bytes for null bytes (`0x00`) and UTF-8 validity.
-
-### Noise & Lockfile Suppression
-- Automatically skips huge auto-generated lockfiles (`package-lock.json`, `Cargo.lock`, `yarn.lock`, `pnpm-lock.yaml`, `flake.lock`, `poetry.lock`, etc.) via `--skip-locks` (enabled by default).
-- Excludes sourcemaps (`*.map`), minified files (`*.min.js`, `*.min.css`), `.env*` secrets, and standard cache/vendor directories (`.git`, `node_modules`, `target`, `dist`, `.venv`, `.cache`, `.gradle`, etc.).
-- Excludes binary artifacts (`f2md`, `folder2md`).
-
-### Flexible CLI & Dynamic Naming
-- **Flag Positioning**: Uses `reorderArgs` to allow flags to appear anywhere on the command line (e.g. `f2md ~/myproject -fn -d`).
-- **Dynamic Filenames**:
-  - `-fn`, `--folder-name`: Include directory name in output.
-  - `-d`, `--date`: Include date (`YYYY-MM-DD`).
-  - `-nd`, `--nodate`: Explicitly disable date.
-  - `-t`, `--time`: Include time (`HH-MM-SS`).
-- **Short & Long Aliases**: Every option supports both formats (`-s` / `--stdout`, `-m` / `--max-size`, `-sl` / `--skip-locks`, `-h` / `--help`).
+Tests: `sort_test.go`, `pack_test.go`, `format_test.go`.
 
 ---
 
-## 3. Git Status & Releases
+## 3. Git
 
-- **`v0.1.0`**: Initial clean rewrite, zero dependencies, bug fixes (ouroboros, fence collision, binary detection), Apache-2.0 license, and Makefile.
-- **`v0.2.0`**: Added `--date` / `-d`, `--nodate` / `-nd`, `--time` / `-t`, `--folder-name` / `-fn`, argument reordering, and updated `~/.local/bin/f2md`.
+- `v0.2.0` already on origin.
+- `v0.3.0`: `--sort`, `--format txt`, README pin, README rewrite.
 
----
+## 4. Next moves
 
-## 4. Maintenance & Build Commands
+- More export types (json, html): extend `parseFormat` + `writeFileBody`.
+- `make` is not on NixOS default PATH; `go build` + `install` works.
+
+## 5. Build
 
 ```bash
-# Rebuild and install locally to ~/.local/bin
+# needs Go on PATH
 make install
-
-# Clean binary artifacts
-make clean
-
-# Run tests/help
 f2md -h
 ```
 
-Signed-off-by: Antigravity (Google DeepMind) & Arcioth
+Signed-off-by: Grok & Arcioth

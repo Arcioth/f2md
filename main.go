@@ -36,6 +36,7 @@ var defaultIgnoreDirs = map[string]bool{
 	"coverage":     true,
 	".nyc_output":  true,
 	"tmp":          true,
+	"__MACOSX":     true,
 }
 
 var commonTextFilenames = map[string]string{
@@ -274,6 +275,12 @@ func shouldIgnore(name string, isDir bool, skipLocks bool) bool {
 // detectTextFile determines if a file is text (checking extensions or sniffing first 512 bytes)
 // and returns the markdown language tag.
 func detectTextFile(path string, base string, ext string) (bool, string) {
+	return detectTextWithOpener(base, ext, func() (io.ReadCloser, error) {
+		return os.Open(path)
+	})
+}
+
+func detectTextWithOpener(base string, ext string, open func() (io.ReadCloser, error)) (bool, string) {
 	if binaryExtensions[ext] {
 		return false, ""
 	}
@@ -285,27 +292,30 @@ func detectTextFile(path string, base string, ext string) (bool, string) {
 	}
 
 	// Sniff unknown file: read first 512 bytes to test for null byte
-	f, err := os.Open(path)
+	rc, err := open()
 	if err != nil {
 		return false, ""
 	}
-	defer f.Close()
+	defer rc.Close()
 
 	buf := make([]byte, 512)
-	n, err := f.Read(buf)
-	if err != nil && err != io.EOF {
+	n, err := io.ReadFull(rc, buf)
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
 		return false, ""
 	}
-	if n == 0 {
+	return sniffTextBytes(buf[:n], ext)
+}
+
+func sniffTextBytes(buf []byte, ext string) (bool, string) {
+	if len(buf) == 0 {
 		return true, "text"
 	}
-
-	for i := 0; i < n; i++ {
-		if buf[i] == 0 {
+	for _, b := range buf {
+		if b == 0 {
 			return false, ""
 		}
 	}
-	if !utf8.Valid(buf[:n]) {
+	if !utf8.Valid(buf) {
 		return false, ""
 	}
 
@@ -412,7 +422,7 @@ func printHelp() {
 	helpText := `f2md - Fast, zero-dependency codebase to Markdown/text context packer
 
 Usage:
-  f2md [options] [directory]
+  f2md [options] [directory|archive.zip]
 
 Output Naming Options:
   -fn,  --folder-name     Include folder name in output filename; pin README first
@@ -444,6 +454,7 @@ Examples:
   f2md -fn -S created:asc          # README first, then oldest created
   f2md -S size -F txt              # largest first, plain text
   f2md -o dump.txt                 # format inferred as txt
+  f2md -fn project.zip             # Pack a .zip archive directly
   f2md -s | wl-copy                # Stream to Wayland clipboard
   f2md -m 1000                     # Allow files up to 1 MB
 `
@@ -574,12 +585,23 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error accessing path: %v\n", err)
 		os.Exit(1)
 	}
-	if !stat.IsDir() {
-		fmt.Fprintf(os.Stderr, "Target path is not a directory: %s\n", absRoot)
+	isZip := !stat.IsDir() && isZipPath(absRoot)
+	if !stat.IsDir() && !isZip {
+		fmt.Fprintf(os.Stderr, "Target path is not a directory or .zip archive: %s\n", absRoot)
 		os.Exit(1)
 	}
 
-	rootDirName := filepath.Base(absRoot)
+	var rootDirName string
+	if isZip {
+		var nameErr error
+		rootDirName, nameErr = zipRootName(absRoot)
+		if nameErr != nil {
+			fmt.Fprintf(os.Stderr, "Error reading zip archive: %v\n", nameErr)
+			os.Exit(1)
+		}
+	} else {
+		rootDirName = filepath.Base(absRoot)
+	}
 
 	isStdout := toStdout || outputFile == "-"
 
@@ -624,16 +646,21 @@ func main() {
 	writer := bufio.NewWriter(out)
 	defer writer.Flush()
 
-	err = packDirectory(absRoot, packOptions{
+	opts := packOptions{
 		skipLocks: finalSkipLocks,
 		maxSizeKB: maxSizeKB,
 		absOutput: absOutput,
 		sort:      sortSpecVal,
 		pinReadme: useFolderName,
 		format:    format,
-	}, writer)
+	}
+	if isZip {
+		err = packZip(absRoot, opts, writer)
+	} else {
+		err = packDirectory(absRoot, opts, writer)
+	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error walking directory: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error packing target: %v\n", err)
 		os.Exit(1)
 	}
 

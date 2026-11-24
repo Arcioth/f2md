@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <title>f2md</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <path d="M8 11v4m0-2h3m3-2 2 2-2 2" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-row">
+            <h1 class="brand-title">f2md</h1>
+            <span class="version-pill" id="versionPill">v0.4.0</span>
+          </div>
+          <p class="brand-sub">Folder &amp; ZIP &rarr; LLM Context</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- Source Selection -->
+      <section class="panel" aria-labelledby="sourceHeading">
+        <div class="panel-header">
+          <h2 id="sourceHeading" class="section-label">Source</h2>
+          <span class="badge badge-muted" id="sourceStatusBadge">Not selected</span>
+        </div>
+
+        <div class="source-grid">
+          <button type="button" class="source-card" id="btnPickFolder" aria-label="Pick a folder">
+            <span class="source-icon source-icon-folder" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 7a2 2 0 0 1 2-2h4.2l2 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+              </svg>
+            </span>
+            <span class="source-card-title">Pick Folder</span>
+            <span class="source-card-hint">Directory tree</span>
+          </button>
+
+          <button type="button" class="source-card" id="btnPickZip" aria-label="Pick a ZIP archive">
+            <span class="source-icon source-icon-zip" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <path d="M10 12h1m-1 3h1m-1 3h2" />
+              </svg>
+            </span>
+            <span class="source-card-title">Pick ZIP</span>
+            <span class="source-card-hint">.zip archive</span>
+          </button>
+        </div>
+
+        <div class="selected-banner hidden" id="selectedBanner" role="status" aria-live="polite">
+          <div class="selected-banner-left">
+            <span class="source-type-tag" id="selectedTypeTag">ZIP</span>
+            <div class="selected-meta">
+              <div class="selected-name" id="selectedName"></div>
+              <div class="selected-sub" id="selectedSub"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pack Configuration -->
+      <section class="panel" aria-labelledby="optionsHeading">
+        <div class="panel-header">
+          <h2 id="optionsHeading" class="section-label">Options</h2>
+          <code class="filename-preview" id="filenamePreview" title="Output filename">project_context.md</code>
+        </div>
+
+        <!-- Output Format -->
+        <div class="control-block">
+          <span class="control-label">Format</span>
+          <div class="segmented" role="group" aria-label="Output format">
+            <button type="button" class="seg-btn active" data-format="md" aria-pressed="true">
+              Markdown <span class="seg-ext">.md</span>
+            </button>
+            <button type="button" class="seg-btn" data-format="txt" aria-pressed="false">
+              Plain Text <span class="seg-ext">.txt</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sort -->
+        <div class="control-block">
+          <div class="control-row-between">
+            <span class="control-label">Sort Order</span>
+            <button type="button" class="dir-pill hidden" id="btnSortDir" aria-label="Toggle sort direction">
+              <span id="sortDirLabel">Desc (Newest / Largest)</span>
+            </button>
+          </div>
+          <div class="chip-row" role="group" aria-label="Sort key">
+            <button type="button" class="chip active" data-sort="name" aria-pressed="true">Default</button>
+            <button type="button" class="chip" data-sort="modified" aria-pressed="false">Modified</button>
+            <button type="button" class="chip" data-sort="size" aria-pressed="false">Size</button>
+            <button type="button" class="chip" data-sort="created" aria-pressed="false">Created</button>
+          </div>
+        </div>
+
+        <!-- Max File Size -->
+        <div class="control-block">
+          <div class="control-row-between">
+            <span class="control-label">Max File Size</span>
+            <div class="inline-input-wrap">
+              <input type="number" id="inputMaxSize" class="num-input" min="0" max="100000" step="50" value="500" inputmode="numeric" aria-label="Maximum file size in kilobytes" />
+              <span class="unit-label">KB</span>
+            </div>
+          </div>
+          <div class="chip-row" role="group" aria-label="Max file size presets">
+            <button type="button" class="chip size-chip" data-size="250">250 KB</button>
+            <button type="button" class="chip size-chip active" data-size="500">500 KB</button>
+            <button type="button" class="chip size-chip" data-size="1024">1 MB</button>
+            <button type="button" class="chip size-chip" data-size="2048">2 MB</button>
+            <button type="button" class="chip size-chip" data-size="0">Unlimited</button>
+          </div>
+        </div>
+
+        <!-- Switches -->
+        <div class="toggle-list">
+          <label class="toggle-row" for="chkFolderName">
+            <span class="toggle-copy">
+              <span class="toggle-title">Folder / Archive Name <code class="flag-tag">-fn</code></span>
+              <span class="toggle-desc">Name output after source &amp; pin README first</span>
+            </span>
+            <input type="checkbox" id="chkFolderName" class="switch-input" checked />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+
+          <label class="toggle-row" for="chkDate">
+            <span class="toggle-copy">
+              <span class="toggle-title">Include Date <code class="flag-tag">-d</code></span>
+              <span class="toggle-desc">Append YYYY-MM-DD to filename</span>
+            </span>
+            <input type="checkbox" id="chkDate" class="switch-input" />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+
+          <label class="toggle-row" for="chkTime">
+            <span class="toggle-copy">
+              <span class="toggle-title">Include Time <code class="flag-tag">-t</code></span>
+              <span class="toggle-desc">Append HH-MM-SS to filename</span>
+            </span>
+            <input type="checkbox" id="chkTime" class="switch-input" />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+
+          <label class="toggle-row" for="chkSkipLocks">
+            <span class="toggle-copy">
+              <span class="toggle-title">Skip Lockfiles <code class="flag-tag">-sl</code></span>
+              <span class="toggle-desc">Ignore package-lock, Cargo.lock, yarn.lock, etc.</span>
+            </span>
+            <input type="checkbox" id="chkSkipLocks" class="switch-input" checked />
+            <span class="switch-track" aria-hidden="true"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Pack Action -->
+      <section class="pack-action-area">
+        <button type="button" class="primary-btn" id="btnPack" disabled>
+          <span class="btn-spinner hidden" id="packSpinner" aria-hidden="true"></span>
+          <svg class="btn-icon" id="packIcon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+          <span id="packBtnText">Select a Folder or ZIP to Pack</span>
+        </button>
+        <p class="progress-line hidden" id="progressLine" role="status" aria-live="polite"></p>
+      </section>
+
+      <!-- Result Workspace -->
+      <section class="panel result-panel hidden" id="resultPanel" aria-labelledby="resultHeading">
+        <div class="panel-header">
+          <div>
+            <h2 id="resultHeading" class="section-label">Packed Output</h2>
+            <div class="result-filename" id="resultFilename"></div>
+          </div>
+          <span class="badge badge-emerald" id="resultFormatBadge">MD</span>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-val" id="metricFiles">0</span>
+            <span class="metric-lbl">Files</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-val" id="metricSize">0 B</span>
+            <span class="metric-lbl">Output</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-val" id="metricTokens">~0</span>
+            <span class="metric-lbl">Tokens</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-val" id="metricTime">0 ms</span>
+            <span class="metric-lbl">Time</span>
+          </div>
+        </div>
+
+        <p class="skip-summary hidden" id="skipSummary"></p>
+
+        <div class="export-actions">
+          <button type="button" class="action-btn action-btn-primary" id="btnShare">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            <span>Share</span>
+          </button>
+
+          <button type="button" class="action-btn" id="btnSave">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Save As</span>
+          </button>
+
+          <button type="button" class="action-btn" id="btnCopy">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <span>Copy</span>
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-bar" role="tablist" aria-label="Output views">
+          <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-tab="tree">Tree</button>
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="files">Files (<span id="tabFileCount">0</span>)</button>
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="preview">Preview</button>
+        </div>
+
+        <!-- Tree Tab -->
+        <div class="tab-pane active" id="paneTree" role="tabpanel">
+          <div class="pane-toolbar">
+            <span class="pane-hint">ASCII project structure</span>
+            <button type="button" class="mini-btn" id="btnCopyTree">Copy Tree</button>
+          </div>
+          <pre class="code-box" id="treeOutput"></pre>
+        </div>
+
+        <!-- Files Tab -->
+        <div class="tab-pane" id="paneFiles" role="tabpanel">
+          <div class="search-wrap">
+            <input type="search" id="fileFilterInput" class="search-input" placeholder="Filter packed files..." aria-label="Filter packed files" />
+          </div>
+          <ul class="file-list" id="fileList"></ul>
+        </div>
+
+        <!-- Preview Tab -->
+        <div class="tab-pane" id="panePreview" role="tabpanel">
+          <div class="pane-toolbar">
+            <span class="pane-hint" id="previewHint">Full output preview</span>
+          </div>
+          <pre class="code-box code-box-tall" id="previewOutput"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="assertive"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,47 +1,46 @@
 # f2md Handoff
 
-**Date**: 2026-09-13  
+**Date**: 2026-11-24  
 **Repository**: https://github.com/Arcioth/f2md (Public, Apache-2.0)  
 **Binary Location**: `~/.local/bin/f2md` (Symlinked: `~/.local/bin/folder2md`)  
-**Version**: 0.3.0
+**Android App**: `android/` (`com.arcioth.f2md`, signed APK attached to GitHub Releases)  
+**Version**: 0.4.0
 
 ---
 
 ## 1. Project Overview
 
-`f2md` is a zero-dependency CLI in pure Go (standard library only) that packs a directory into one Markdown or plain-text document for LLM context.
+`f2md` is a zero-dependency CLI in pure Go (standard library only) and a native Kotlin Android app that pack a directory or `.zip` archive into one Markdown or plain-text document for LLM context.
 
 README is the public landing page. This file is session state.
 
 ---
 
-## 2. Current CLI (v0.3.0)
+## 2. Current Features (v0.4.0)
 
+- **ZIP input support** in both Go CLI (`zip.go`) and Android (`F2mdPacker.packZipFile`): unwraps single wrapper directories (e.g. GitHub `repo-main/`), filters `__MACOSX`, enforces size limits safely, supports all sort/format/README-pinning flags.
+- **Android APK (`android/`)**:
+  - Pure Kotlin engine (`F2mdPacker.kt`, `SafFolderPacker.kt`) with 1:1 CLI parity and JVM unit tests (`F2mdPackerTest.kt`).
+  - Fast `DocumentsContract` single-cursor SAF folder scanning + `ZipFile` random-access archive packing.
+  - Handles `ACTION_VIEW` & `ACTION_SEND` for `.zip` files.
+  - Local offline HTML/CSS/JS WebView UI with Share (`FileProvider`), Save As (`ACTION_CREATE_DOCUMENT`), Copy, Tree/Files/Preview tabs.
 - `-S` / `--sort KEY[:asc|:desc]` — keys `size`, `created`, `modified`. Default desc.
 - `-F` / `--format md|txt` — also inferred from `-o` extension.
-- `-fn` pins README variants to the top and names the output after the folder.
+- `-fn` pins README variants to the top and names the output after the folder/archive.
 - Created time: Linux `statx` btime, else ctime. Darwin birthtime. Windows CreationTime.
 
-Tests: `sort_test.go`, `pack_test.go`, `format_test.go`.
+Tests: Go (`sort_test.go`, `pack_test.go`, `format_test.go`, `zip_test.go`), Android (`F2mdPackerTest.kt`).
 
 ---
 
-## 3. Git
-
-- `v0.2.0` already on origin.
-- `v0.3.0`: `--sort`, `--format txt`, README pin, README rewrite.
-
-## 4. Next moves
-
-- More export types (json, html): extend `parseFormat` + `writeFileBody`.
-- `make` is not on NixOS default PATH; `go build` + `install` works.
-
-## 5. Build
+## 3. Build
 
 ```bash
-# needs Go on PATH
-make install
-f2md -h
-```
+# CLI
+nix-shell -p go --run "go test ./... && go build -o f2md ."
+install -Dm755 f2md ~/.local/bin/f2md
 
-Signed-off-by: Grok & Arcioth
+# Android APK
+cd android
+NIXPKGS_ALLOW_UNFREE=1 NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1 nix-shell shell.nix --run "gradle testDebugUnitTest assembleRelease"
+```

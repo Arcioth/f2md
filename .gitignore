@@ -1,6 +1,6 @@
 # Binaries
-f2md
-folder2md
+/f2md
+/folder2md
 
 # Generated output
 project_context.md
@@ -11,3 +11,15 @@ project_context.md
 Thumbs.db
 .idea/
 .vscode/
+
+# Android build artifacts & local keys
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+
